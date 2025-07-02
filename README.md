@@ -77,11 +77,5 @@ The second page (entries 21–40) is accessible via tabbed navigation in ServerI
 Created by **Orangemart**
 This plugin integrates closely with the [DepositBox plugin](https://github.com/Orangemart/DepositBox) for dynamic player rankings based on in-game deposits.
 
-## License
 
-MIT License
 
-```
-
-Let me know if you’d like me to generate this as a downloadable file or include a badge, like `Built for Rust` or `Oxide Plugin`.
-```
