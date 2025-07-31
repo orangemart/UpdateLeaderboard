@@ -1,4 +1,4 @@
-// UpdateLeaderboard.cs (with pagination)
+// UpdateLeaderboard.cs (with localization support and pagination)
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,14 +11,17 @@ using Oxide.Core.Plugins;
 
 namespace Oxide.Plugins
 {
-    [Info("UpdateLeaderboard", "Orangemart", "1.2.0")]
-    [Description("Updates the Leaderboard tab in ServerInfo.json with 2-page paginated data.")]
+    [Info("UpdateLeaderboard", "Orangemart", "1.3.1")]
+    [Description("Updates the Leaderboard tab in ServerInfo.json with 2-page paginated data and localization support.")]
     public class UpdateLeaderboard : CovalencePlugin
     {
         [PluginReference] private Plugin DepositBox;
 
         private const string ServerInfoPath = "oxide/config/ServerInfo.json";
         private const string SummaryPath = "oxide/data/DepositBox/DepositBoxSummary.json";
+
+        // ✅ Lang() helper method to support localization in CovalencePlugin
+        private string Lang(string key, string playerId = null) => lang.GetMessage(key, this, playerId);
 
         [Command("updateleaderboard")]
         private void CmdUpdateLeaderboard(IPlayer player, string command, string[] args)
@@ -62,11 +65,11 @@ namespace Oxide.Plugins
 
                 Puts($"📈 Found {sortedPlayers.Count} top players with deposits.");
 
-                // Build all lines first
+                // Localized title lines
                 var allLines = new List<string>
                 {
-                    "🏆 Top Scrap Depositors This Wipe",
-                    $"Total Deposited: {totalDeposited:N0} scrap",
+                    Lang("TitleLine1", player.Id),
+                    string.Format(Lang("TitleLine2", player.Id), totalDeposited.ToString("N0")),
                     ""
                 };
 
@@ -80,14 +83,13 @@ namespace Oxide.Plugins
                     allLines.Add($"{i + 1}. {name} - {deposited:N0} ({percentage:F2}%)");
                 }
 
-                // Split into 2 pages of 20 entries each (plus title on page 1)
-                var page1Lines = allLines.Take(23).ToList(); // 3 header lines + 20 players
+                var page1Lines = allLines.Take(23).ToList();
                 var page2Lines = allLines.Skip(23).ToList();
 
                 var leaderboardTab = new JObject
                 {
-                    ["ButtonText"] = "Leaderboard",
-                    ["HeaderText"] = "Top Scrap Depositors",
+                    ["ButtonText"] = Lang("ButtonText", player.Id),
+                    ["HeaderText"] = Lang("HeaderText", player.Id),
                     ["Pages"] = new JArray
                     {
                         new JObject
@@ -125,10 +127,9 @@ namespace Oxide.Plugins
                     return;
                 }
 
-                // Remove old leaderboard
                 for (int i = tabs.Count - 1; i >= 0; i--)
                 {
-                    if (tabs[i]["ButtonText"]?.ToString() == "Leaderboard")
+                    if (tabs[i]["ButtonText"]?.ToString() == Lang("ButtonText", player.Id))
                     {
                         tabs.RemoveAt(i);
                         Puts($"🧹 Removed existing Leaderboard tab at index {i}.");
@@ -148,6 +149,17 @@ namespace Oxide.Plugins
                 player.Reply($"❌ Error: {ex.Message}");
                 Puts($"❌ Error updating leaderboard: {ex.Message}");
             }
+        }
+
+        protected override void LoadDefaultMessages()
+        {
+            lang.RegisterMessages(new Dictionary<string, string>
+            {
+                ["ButtonText"] = "Leaderboard",
+                ["HeaderText"] = "Top Scrap Depositors",
+                ["TitleLine1"] = "🏆 Top Scrap Depositors This Wipe",
+                ["TitleLine2"] = "Total Deposited: {0} scrap"
+            }, this, "en");
         }
     }
 }
